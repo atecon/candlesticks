@@ -1,0 +1,48 @@
+This package creates so called candlestick plots. See here for examples:
+http://gnuplot.sourceforge.net/demo_5.4/finance.html
+
+Candlesticks are used to plot financial data. The width of the candlestick is the difference between the opening and closing price, and is called "body". Above and below the body are the "shadows" that indicate the maximum and minimum price at observation t. If the opening price is lower than the closing price, the body is white or green. If the opening price is higher than the closing price, the body is black or red. For more: https://en.wikipedia.org/wiki/Candlestick_chart
+
+The data frequency must be a time-series with daily observations (5, 6 or 7 days week). If one of the passed series includes missing values for the t-th observation, this observation is ignored for plotting.
+
+Please ask questions and report bugs on the gretl mailing list if possible. Alternatively, create an issue ticket on the github repo (see below).
+Source code and test script(s) can be found here:
+https://github.com/atecon/candlesticks
+
+
+
+PUBLIC FUNCTION:
+
+-----------------------------------------------------------------------
+Function:       plot_candlesticks(list L, bundle self)
+
+Description:    Main function for creating chart
+
+Arguments:
+list L:
+        Series in list are in expected order Open, Close, High, Low, (Volume)
+        Volume series is optional, and plotted only if show_volume = TRUE
+
+bundle self:
+        Optional parameters for controlling the chart. You can pass the
+        following parameters:
+
+          show_volume:  bool, Plot the volume chart below candlesticks
+                        (default: FALSE)
+          show_colors:  bool, Plot colored chart (default: FALSE)
+          path:         string, Filename to store chart (default: empty,
+          rotate_xtics: scalar, Rotate x-labels by rotate_xtics degrees
+                        (default: 0)
+          title:        string, Set title of chart (default: "")
+          number_of_xtics:
+                        int, Show only every number_of_xtics xtic label
+                        (default: 7)
+
+Return:
+Nothing.
+-----------------------------------------------------------------------
+
+
+Changelog:
+- v1.0, August 2022
+    + initial release

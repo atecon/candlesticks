@@ -1,0 +1,182 @@
+function void run_checks (const list L,
+                          bundle self)
+    # Run initial checks
+
+    errorif($datatype != 2, "Dataset must be time-series")
+    errorif(($pd < 5 && $pd > 7),\
+            "Time-series dataset must have daily frequency")
+    errorif(nelem(L) < 4, "Too few items in list")
+    errorif(nelem(L) < 5 && self.show_volume == TRUE, "Volume series not in list")
+    errorif(self.number_of_xtics != floor(self.number_of_xtics),\
+            "number_of_xtics must be integer")
+    errorif(self.number_of_xtics < 1,\
+            "number_of_xtics must be a positive integer")
+end function
+
+function string get_path (void)
+    # Build unique path for temp plt file
+
+    string separator = $windows == TRUE ? "\cdlstk_" : "/cdlstk_"
+    string unniqueId = sprintf("%s_%d", strftime($now[1], "%m%d_%H%M"), randint(1000,9999))
+    string path = $dotdir ~ separator ~ unniqueId ~ ".plt"
+
+    return path
+end function
+
+function string get_xtics_string (const series epoch,
+                                  const scalar offset)
+    # Compile gnuplot string for xtics
+
+    scalar T = nobs(epoch)
+    string str = "set xtics (" ~ sprintf("\"%s\" %d", isodate(epoch[1], TRUE), 0)
+    loop for (i = offset + 1; i <= T; i += offset)
+        str ~= sprintf(", \"%s\" %d", isodate(epoch[i], TRUE), i-1)
+    endloop
+    str ~= ")"
+
+    return str
+end function
+
+function string get_xtics_volume_string (const scalar T,
+                                         const scalar sp)
+    # Compile gnuplot string for xtics of volume subplot
+
+    string str = "set xtics (" ~ sprintf("\"          \" %d", 0)
+    loop for (i = sp + 1; i <= T; i += sp)
+        str ~= sprintf(", \"          \" %d", i-1)
+    endloop
+    str ~= ")"
+
+    return str
+end function
+
+function void compile_gnuplot_commands (const bundle self)
+    # Compile the actual gnuplot code
+
+    string path = self.path
+
+    outfile "@path" --quiet
+        printf("set yrange [%g:%g]\n", self.minY, self.maxY)
+        printf("set xrange [-1:%d]\n", (self.T + 5))
+        printf("set ytics %g, %g\n", self.minY, (self.maxY - self.minY) / 10)
+        printf("set grid\n")
+        printf("set ytics nomirror\n")
+        printf("set format y \"\%.1f\"\n")
+        printf("set format x (\"\%.0f\")\n")
+        printf("set xrange [-1:%d]\n", self.T)
+        if self.show_volume
+            printf("%s\n", self.xtics_string_volume)
+        else
+            printf("%s\n", self.xtics_string)
+        endif
+        if self.rotate_xtics
+            printf("set xtics nomirror rotate by %g right\n", self.rotate_xtics)
+        endif
+        printf("unset colorbox\n")
+        printf("set title \"%s\"\n", self.title)
+        if self.show_volume
+            printf("set multiplot\n")
+            printf("set size 1, 0.7\n")
+            printf("set origin 0, 0.3\n")
+            printf("set bmargin 0\n")
+            printf("set format x \"\"\n")
+        endif
+        printf("set lt 10 lw 1 lc rgb \"black\"\n")
+        printf("set style fill solid border lt 10\n")
+        if self.show_colors
+            printf("set palette defined (-1 'red', 1 'green')\n")
+        else
+            printf("set palette defined (-1 'black', 1 'white')\n")
+        endif
+        printf("set boxwidth 0.5 relative\n")
+        printf("set cbrange [-1:1]\n")
+        printf("plot '-' using 0:1:2:3:4:($4 < $1 ? -1 : 1) notitle with candlesticks lt 10 palette\n")
+        loop i=1..self.T
+            printf("%g %g %g %g\n", self.Data[i,1], self.Data[i,3], self.Data[i,4], self.Data[i,2])
+        endloop
+        printf("e\n")
+        if self.show_volume
+            printf("unset label 1\n")
+            printf("unset label 2\n")
+            printf("unset title\n")
+            printf("set xtics mirror\n")
+            printf("%s\n", self.xtics_string)
+            printf("set ytics nomirror\n")
+            printf("set bmargin\n")
+            printf("set format x\n")
+            printf("set size 1.0, 0.3\n")
+            printf("set origin 0.0, 0.0\n")
+            printf("set tmargin 0\n")
+            printf("unset logscale y\n")
+            printf("set yrange [0:%d]\n", maxc(self.Data[,5])*1.2)
+            printf("set format y \"\%.0s \%c\"\n")
+            printf("set ytics 0, %d, %d\n", maxc(self.Data[,5])/5, maxc(self.Data[,5]))
+            printf("set style line 1 lw 3\n")
+            printf("set style fill solid border lt 1\n")
+            printf("unset colorbox\n")
+            printf("set lt 10 lw 1 lc rgb \"black\"\n")
+            printf("set style fill solid border lt 10\n")
+            if self.show_colors
+                printf("set palette defined (-1 'red', 1 'green')\n")
+            else
+                printf("set palette defined (-1 'black', 1 'white')\n")
+            endif
+            printf("plot '-' using 0:1:($3 < $2 ? -1 : 1) notitle with boxes palette\n")
+            loop i=1..self.T
+                printf("%d %g %g\n", self.Data[i,5], self.Data[i,1], self.Data[i,2])
+            endloop
+            printf("e\n")
+            printf("unset multiplot\n")
+        endif
+    end outfile
+end function
+
+function bundle default_values (void)
+    # Set default values for main bundle
+
+    bundle self
+    scalar self.show_volume = FALSE
+    scalar self.show_colors = FALSE
+    string self.path = get_path()
+    scalar self.rotate_xtics = 0
+    string self.title = ""
+    scalar self.number_of_xtics = 7
+
+    return self
+end function
+
+# public functions
+
+function void plot_candlesticks (list L "Expected order: Open, Close, High, Low,
+                                 (show_volume)",
+                                 bundle self[null])
+    /* Main function for generating candlesticks. */
+
+    if !exists(self)
+        bundle self
+    endif
+    bundle self = self + default_values()
+
+    run_checks(L, self)
+
+    series epoch = epochday($obsdate)
+    if sum(!ok(L)) > 0
+        print "WARNING: Some input series contain missing values. These are ignored."
+        smpl L --no-missing
+    endif
+    matrix self.Data = {L}
+
+    scalar self.T = rows(self.Data)
+    scalar self.offset_xtics = floor(self.T / self.number_of_xtics) + 1
+
+    #Settings for Y axis
+    scalar graphH = max(self.Data[,4]) - min(self.Data[,3])
+    scalar self.minY = floor(min(self.Data[,3]) - graphH * 0.1)
+    scalar self.maxY = floor(max(self.Data[,4]) + graphH * 0.1) + 1
+    string self.xtics_string = get_xtics_string(epoch, self.offset_xtics)
+    string self.xtics_string_volume = get_xtics_volume_string(self.T, self.offset_xtics)
+
+    compile_gnuplot_commands(self)
+    string path = self.path
+    gnuplot --input="@path" --output=display
+end function

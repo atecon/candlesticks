@@ -1,0 +1,25 @@
+clear
+set verbose off
+
+# Load function packages
+include candlesticks.gfn
+
+# Prepare the dataset and variables
+open stock_data.gdt --frompkg=candlesticks
+list L = 3..7
+
+# Most basic call
+plot_candlesticks(L)
+
+# Colored plot
+plot_candlesticks(L, _(show_colors=TRUE))
+
+# Add a subplot showing the trade volume
+plot_candlesticks(L, _(show_volume=TRUE))
+
+# Add a title
+plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE,
+                  title="Coca Cola (KO)"))
+
+# Rotate xtics
+plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE, rotate_xtics=45))
