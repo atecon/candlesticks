@@ -7,11 +7,35 @@ function void run_checks (const list L,
             "Time-series dataset must have daily frequency")
     errorif(nelem(L) < 4, "Too few items in list")
     errorif(nelem(L) < 5 && self.show_volume == TRUE, "Volume series not in list")
+    input_is_consistent(L)
     errorif(self.number_of_xtics != floor(self.number_of_xtics),\
             "number_of_xtics must be integer")
     errorif(self.number_of_xtics < 1,\
             "number_of_xtics must be a positive integer")
 end function
+
+function void input_is_consistent (const list L)
+    /* The expected ordering of the input series is: Open, Close, Low, High.
+    Check for the following ordering: Low <= (Open, Close) <= High.
+    return: void */
+
+    scalar sum_open = sum(L[1])
+    scalar sum_close = sum(L[2])
+    scalar sum_low = sum(L[3])
+    scalar sum_high = sum(L[4])
+
+    errorif(sum_low > sum_high,
+            "Inconsistency: Series 'Low' is higher than 'high'.")
+    errorif(sum_low > sum_open,
+            "Inconsistency: Series 'Low' is higher than 'Open'.")
+    errorif(sum_low > sum_close,
+            "Inconsistency: Series 'Low' is higher than 'Close'.")
+    errorif(sum_high < sum_open,
+            "Inconsistency: Series 'High' is lower than 'Open'.")
+    errorif(sum_high < sum_close,
+            "Inconsistency: Series 'High' is lower than 'Close'.")
+end function
+
 
 function string get_filename (void)
     # Build unique get_filename for temp plt file
@@ -149,7 +173,7 @@ function bundle default_values (void)
     return self
 end function
 
-function void plot_candlesticks (list L "Expected order: Open, Close, High, Low,
+function void plot_candlesticks (list L "Expected order: Open, Close, Low, High,
                                  (Volume)",
                                  bundle self[null])
     /* Main function for generating candlesticks. */
@@ -158,6 +182,7 @@ function void plot_candlesticks (list L "Expected order: Open, Close, High, Low,
         bundle self
     endif
     bundle self = self + default_values()
+    self.show_volume = nelem(L) == 5 ? TRUE : FALSE
 
     run_checks(L, self)
     series epoch = epochday($obsdate)
@@ -194,7 +219,7 @@ function void compile_gnuplot_chart (const bundle self)
 end function
 
 
-function void candlestick_gui (list L "Order: Open, Close, High, Low, (Volume)",
+function void candlestick_gui (list L "Order: Open, Close, Low, High, (Volume)",
                                const bool show_colors "Plot colourized chart")
     /* Helper function for GUI access. */
 

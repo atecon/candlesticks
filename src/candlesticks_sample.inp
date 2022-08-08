@@ -6,7 +6,7 @@ include candlesticks.gfn
 
 # Prepare the dataset and variables
 open cocacola.gdt --frompkg=candlesticks
-list L = 3..7
+list L = KO_o KO_c KO_l KO_h
 
 # Most basic call
 plot_candlesticks(L)
@@ -14,15 +14,17 @@ plot_candlesticks(L)
 # Colored plot
 plot_candlesticks(L, _(show_colors=TRUE))
 
-# Add a subplot showing the trade volume
-plot_candlesticks(L, _(show_volume=TRUE))
+# Also show trade volume in a subplot
+list L += KO_v   # add 5th item which should refer to trade volume
+plot_candlesticks(L)
 
 # Add a title
-plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE,
-                  title="Coca Cola (KO)"))
+plot_candlesticks(L,  _(show_colors=TRUE,
+                        title="Coca Cola (KO)"))
 
 # Rotate xtics
-plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE, rotate_xtics=45))
+plot_candlesticks(L,  _(show_colors=TRUE,
+                        rotate_xtics=45))
 
 # Store chart locally
 plot_candlesticks(L, _(filename="candlestick.png"))

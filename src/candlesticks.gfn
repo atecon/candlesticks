@@ -21,6 +21,17 @@ Source code and test script(s) can be found here:
 https://github.com/atecon/candlesticks
 
 
+Usage via the GUI
+=================
+As a user you can either call the main function via scripting (see below) or
+the GUI. The menu entry is &quot;View-&gt;Graph specified vars-&gt;Candlesticks plot&quot;.
+The user has to pass a list with series in expected order: Open, Close, High,
+Low. An optionally last item can refer to trade volume.
+
+If you pass the optional 5th volume series, this is shown in a separate chart below the candlestick plot.
+
+Via scripting the user can control many more details as shown below.
+
 
 PUBLIC FUNCTION:
 
@@ -31,15 +42,14 @@ Description:    Main function for creating chart
 
 Arguments:
 list L:
-        Series in list are in expected order Open, Close, High, Low, (Volume)
-        Volume series is optional, and plotted only if show_volume = TRUE
+        Mandatory list of series in expected order: Open, Close, Low, High.
+        A fifth series referring to trade volume is optional. Once added, it
+        will be plotted in a subplot.
 
 bundle self:
         Optional parameters for controlling the chart. You can pass the
         following parameters:
 
-          show_volume:  bool, Plot the volume chart below candlesticks
-                        (default: FALSE)
           show_colors:  bool, Plot colored chart (default: FALSE)
           filename      string, Filename to store chart (default: empty,
           rotate_xtics: scalar, Rotate x-labels by rotate_xtics degrees
@@ -63,7 +73,7 @@ cocacola.gdt </data-files>
 <gretl-function name="plot_candlesticks" type="void">
  <params count="2">
   <param name="L" type="list">
-<description>Expected order: Open, Close, High, Low,                                 (Volume)</description>
+<description>Expected order: Open, Close, Low, High,                                 (Volume)</description>
   </param>
   <param name="self" type="bundle" optional="true"/>
  </params>
@@ -72,6 +82,7 @@ if !exists(self)
   bundle self
 endif
 bundle self = self + default_values()
+self.show_volume = nelem(L) == 5 ? TRUE : FALSE
 run_checks(L, self)
 series epoch = epochday($obsdate)
 if sum(!ok(L)) &gt; 0
@@ -94,7 +105,7 @@ compile_gnuplot_chart(self)
 <gretl-function name="candlestick_gui" type="void" no-print="1" pkg-role="gui-main">
  <params count="2">
   <param name="L" type="list">
-<description>Order: Open, Close, High, Low, (Volume)</description>
+<description>Order: Open, Close, Low, High, (Volume)</description>
   </param>
   <param name="show_colors" type="bool" const="true">
 <description>Plot colourized chart</description>
@@ -116,8 +127,27 @@ errorif($datatype != 2, &quot;Dataset must be time-series&quot;)
 errorif(($pd &lt; 5 &amp;&amp; $pd &gt; 7), &quot;Time-series dataset must have daily frequency&quot;)
 errorif(nelem(L) &lt; 4, &quot;Too few items in list&quot;)
 errorif(nelem(L) &lt; 5 &amp;&amp; self.show_volume == TRUE, &quot;Volume series not in list&quot;)
+input_is_consistent(L)
 errorif(self.number_of_xtics != floor(self.number_of_xtics), &quot;number_of_xtics must be integer&quot;)
 errorif(self.number_of_xtics &lt; 1, &quot;number_of_xtics must be a positive integer&quot;)
+</code>
+</gretl-function>
+<gretl-function name="input_is_consistent" type="void" private="1">
+ <params count="1">
+  <param name="L" type="list" const="true"/>
+ </params>
+<code>/* The expected ordering of the input series is: Open, Close, Low, High.
+Check for the following ordering: Low &lt;= (Open, Close) &lt;= High.
+return: void */
+scalar sum_open = sum(L[1])
+scalar sum_close = sum(L[2])
+scalar sum_low = sum(L[3])
+scalar sum_high = sum(L[4])
+errorif(sum_low &gt; sum_high, &quot;Inconsistency: Series 'Low' is higher than 'high'.&quot;)
+errorif(sum_low &gt; sum_open, &quot;Inconsistency: Series 'Low' is higher than 'Open'.&quot;)
+errorif(sum_low &gt; sum_close, &quot;Inconsistency: Series 'Low' is higher than 'Close'.&quot;)
+errorif(sum_high &lt; sum_open, &quot;Inconsistency: Series 'High' is lower than 'Open'.&quot;)
+errorif(sum_high &lt; sum_close, &quot;Inconsistency: Series 'High' is lower than 'Close'.&quot;)
 </code>
 </gretl-function>
 <gretl-function name="get_filename" type="string" private="1">
@@ -272,7 +302,7 @@ include candlesticks.gfn
 
 # Prepare the dataset and variables
 open cocacola.gdt --frompkg=candlesticks
-list L = 3..7
+list L = KO_o KO_c KO_l KO_h
 
 # Most basic call
 plot_candlesticks(L)
@@ -280,15 +310,17 @@ plot_candlesticks(L)
 # Colored plot
 plot_candlesticks(L, _(show_colors=TRUE))
 
-# Add a subplot showing the trade volume
-plot_candlesticks(L, _(show_volume=TRUE))
+# Also show trade volume in a subplot
+list L += KO_v   # add 5th item which should refer to trade volume
+plot_candlesticks(L)
 
 # Add a title
-plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE,
-                  title=&quot;Coca Cola (KO)&quot;))
+plot_candlesticks(L,  _(show_colors=TRUE,
+                        title=&quot;Coca Cola (KO)&quot;))
 
 # Rotate xtics
-plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE, rotate_xtics=45))
+plot_candlesticks(L,  _(show_colors=TRUE,
+                        rotate_xtics=45))
 
 # Store chart locally
 plot_candlesticks(L, _(filename=&quot;candlestick.png&quot;))
