@@ -5,7 +5,7 @@ set verbose off
 include candlesticks.gfn
 
 # Prepare the dataset and variables
-open stock_data.gdt --frompkg=candlesticks
+open cocacola.gdt --frompkg=candlesticks
 list L = 3..7
 
 # Most basic call
