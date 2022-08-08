@@ -6,6 +6,8 @@
 <date>2022-08-08</date>
 <description>Plot candlestick chart</description>
 <tags>C10 C58</tags>
+<label>Candlestick plot</label>
+<menu-attachment>MAINWIN/View/GraphVars</menu-attachment>
 <help>
 This package creates so called candlestick plots. See here for examples:
 http://gnuplot.sourceforge.net/demo_5.4/finance.html
@@ -61,7 +63,7 @@ cocacola.gdt </data-files>
 <gretl-function name="plot_candlesticks" type="void">
  <params count="2">
   <param name="L" type="list">
-<description>Expected order: Open, Close, High, Low,                                 (show_volume)</description>
+<description>Expected order: Open, Close, High, Low,                                 (Volume)</description>
   </param>
   <param name="self" type="bundle" optional="true"/>
  </params>
@@ -87,6 +89,21 @@ string self.xtics_string = get_xtics_string(epoch, self.offset_xtics)
 string self.xtics_string_volume = get_xtics_volume_string(self.T, self.offset_xtics)
 compile_gnuplot_commands(self)
 compile_gnuplot_chart(self)
+</code>
+</gretl-function>
+<gretl-function name="candlestick_gui" type="void" no-print="1" pkg-role="gui-main">
+ <params count="2">
+  <param name="L" type="list">
+<description>Order: Open, Close, High, Low, (Volume)</description>
+  </param>
+  <param name="show_colors" type="bool" const="true">
+<description>Plot colourized chart</description>
+  </param>
+ </params>
+<code>/* Helper function for GUI access. */
+scalar show_volume = nelem(L) ==5 ? TRUE : FALSE
+bundle self = _(show_volume, show_colors)
+plot_candlesticks(L, self)
 </code>
 </gretl-function>
 <gretl-function name="run_checks" type="void" private="1">
