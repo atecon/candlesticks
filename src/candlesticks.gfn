@@ -258,10 +258,7 @@ open cocacola.gdt --frompkg=candlesticks
 list L = 3..7
 
 # Most basic call
-plot_candlesticks(L, _(filename=&quot;candlestick.png&quot;))
-
-#plot_candlesticks(L)
-stop
+plot_candlesticks(L)
 
 # Colored plot
 plot_candlesticks(L, _(show_colors=TRUE))
