@@ -13,14 +13,16 @@ function void run_checks (const list L,
             "number_of_xtics must be a positive integer")
 end function
 
-function string get_path (void)
-    # Build unique path for temp plt file
+function string get_filename (void)
+    # Build unique get_filename for temp plt file
 
     string separator = $windows == TRUE ? "\cdlstk_" : "/cdlstk_"
-    string unniqueId = sprintf("%s_%d", strftime($now[1], "%m%d_%H%M"), randint(1000,9999))
-    string path = $dotdir ~ separator ~ unniqueId ~ ".plt"
+    string unniqueId = sprintf("%s_%d",
+                               strftime($now[1], "%m%d_%H%M"),
+                               randint(1, 10e6))
+    string filename = $dotdir ~ separator ~ unniqueId ~ ".plt"
 
-    return path
+    return filename
 end function
 
 function string get_xtics_string (const series epoch,
@@ -50,12 +52,13 @@ function string get_xtics_volume_string (const scalar T,
     return str
 end function
 
+
 function void compile_gnuplot_commands (const bundle self)
     # Compile the actual gnuplot code
 
-    string path = self.path
+    string filename = self.input_filename
 
-    outfile "@path" --quiet
+    outfile "@filename" --quiet
         printf("set yrange [%g:%g]\n", self.minY, self.maxY)
         printf("set xrange [-1:%d]\n", (self.T + 5))
         printf("set ytics %g, %g\n", self.minY, (self.maxY - self.minY) / 10)
@@ -137,15 +140,14 @@ function bundle default_values (void)
     bundle self
     scalar self.show_volume = FALSE
     scalar self.show_colors = FALSE
-    string self.path = get_path()
+    string self.input_filename = get_filename()
+    string self.filename = "display"
     scalar self.rotate_xtics = 0
     string self.title = ""
     scalar self.number_of_xtics = 7
 
     return self
 end function
-
-# public functions
 
 function void plot_candlesticks (list L "Expected order: Open, Close, High, Low,
                                  (show_volume)",
@@ -177,6 +179,16 @@ function void plot_candlesticks (list L "Expected order: Open, Close, High, Low,
     string self.xtics_string_volume = get_xtics_volume_string(self.T, self.offset_xtics)
 
     compile_gnuplot_commands(self)
-    string path = self.path
-    gnuplot --input="@path" --output=display
+    compile_gnuplot_chart(self)
+end function
+
+function void compile_gnuplot_chart (const bundle self)
+    /* Actual call of gnuplot command. */
+
+    string input_filename = self.input_filename
+    string output_filename = self.filename
+
+    gnuplot --input="@input_filename" --output="@output_filename"
+
+    remove("@input_filename")  # clean up temporary *.gp file
 end function

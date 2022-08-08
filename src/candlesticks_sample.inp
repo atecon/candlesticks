@@ -23,3 +23,6 @@ plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE,
 
 # Rotate xtics
 plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE, rotate_xtics=45))
+
+# Store chart locally
+plot_candlesticks(L, _(filename="candlestick.png"))

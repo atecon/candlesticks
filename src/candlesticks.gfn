@@ -3,14 +3,14 @@
 <gretl-function-package name="candlesticks" needs-time-series-data="true" minver="2021d" lives-in-subdir="true">
 <author email="deferoci@gmail.com">Federico Fiorani and Artur Tarassow</author>
 <version>1.0</version>
-<date>2022-08-07</date>
+<date>2022-08-08</date>
 <description>Plot candlestick chart</description>
 <tags>C10 C58</tags>
 <help>
 This package creates so called candlestick plots. See here for examples:
 http://gnuplot.sourceforge.net/demo_5.4/finance.html
 
-Candlesticks are used to plot financial data. The width of the candlestick is the difference between the opening and closing price, and is called &quot;body&quot;. Above and below the body are the &quot;shadows&quot; that indicate the maximum and minimum price at observation t. If the opening price is lower than the closing price, the body is white or green. If the opening price is higher than the closing price, the body is black or red. For more: https://en.wikipedia.org/wiki/Candlestick_chart
+Candlesticks are used to plot financial data. The height of the candlestick is the difference between the opening and closing price, and is called &quot;body&quot;. Above and below the body are the &quot;shadows&quot; that indicate the maximum and minimum price at observation t. If the opening price is lower than the closing price, the body is white or green. If the opening price is higher than the closing price, the body is black or red. For more: https://en.wikipedia.org/wiki/Candlestick_chart
 
 The data frequency must be a time-series with daily observations (5, 6 or 7 days week). If one of the passed series includes missing values for the t-th observation, this observation is ignored for plotting.
 
@@ -39,7 +39,7 @@ bundle self:
           show_volume:  bool, Plot the volume chart below candlesticks
                         (default: FALSE)
           show_colors:  bool, Plot colored chart (default: FALSE)
-          path:         string, Filename to store chart (default: empty,
+          filename      string, Filename to store chart (default: empty,
           rotate_xtics: scalar, Rotate x-labels by rotate_xtics degrees
                         (default: 0)
           title:        string, Set title of chart (default: &quot;&quot;)
@@ -86,8 +86,7 @@ scalar self.maxY = floor(max(self.Data[,4]) + graphH * 0.1) + 1
 string self.xtics_string = get_xtics_string(epoch, self.offset_xtics)
 string self.xtics_string_volume = get_xtics_volume_string(self.T, self.offset_xtics)
 compile_gnuplot_commands(self)
-string path = self.path
-gnuplot --input=&quot;@path&quot; --output=display
+compile_gnuplot_chart(self)
 </code>
 </gretl-function>
 <gretl-function name="run_checks" type="void" private="1">
@@ -104,12 +103,12 @@ errorif(self.number_of_xtics != floor(self.number_of_xtics), &quot;number_of_xti
 errorif(self.number_of_xtics &lt; 1, &quot;number_of_xtics must be a positive integer&quot;)
 </code>
 </gretl-function>
-<gretl-function name="get_path" type="string" private="1">
-<code># Build unique path for temp plt file
+<gretl-function name="get_filename" type="string" private="1">
+<code># Build unique get_filename for temp plt file
 string separator = $windows == TRUE ? &quot;\cdlstk_&quot; : &quot;/cdlstk_&quot;
-string unniqueId = sprintf(&quot;%s_%d&quot;, strftime($now[1], &quot;%m%d_%H%M&quot;), randint(1000,9999))
-string path = $dotdir ~ separator ~ unniqueId ~ &quot;.plt&quot;
-return path
+string unniqueId = sprintf(&quot;%s_%d&quot;, strftime($now[1], &quot;%m%d_%H%M&quot;), randint(1, 10e6))
+string filename = $dotdir ~ separator ~ unniqueId ~ &quot;.plt&quot;
+return filename
 </code>
 </gretl-function>
 <gretl-function name="get_xtics_string" type="string" private="1">
@@ -146,8 +145,8 @@ return str
   <param name="self" type="bundle" const="true"/>
  </params>
 <code># Compile the actual gnuplot code
-string path = self.path
-outfile &quot;@path&quot; --quiet
+string filename = self.input_filename
+outfile &quot;@filename&quot; --quiet
   printf(&quot;set yrange [%g:%g]\n&quot;, self.minY, self.maxY)
   printf(&quot;set xrange [-1:%d]\n&quot;, (self.T + 5))
   printf(&quot;set ytics %g, %g\n&quot;, self.minY, (self.maxY - self.minY) / 10)
@@ -228,11 +227,23 @@ end outfile
 bundle self
 scalar self.show_volume = FALSE
 scalar self.show_colors = FALSE
-string self.path = get_path()
+string self.input_filename = get_filename()
+string self.filename = &quot;display&quot;
 scalar self.rotate_xtics = 0
 string self.title = &quot;&quot;
 scalar self.number_of_xtics = 7
 return self
+</code>
+</gretl-function>
+<gretl-function name="compile_gnuplot_chart" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>/* Actual call of gnuplot command. */
+string input_filename = self.input_filename
+string output_filename = self.filename
+gnuplot --input=&quot;@input_filename&quot; --output=&quot;@output_filename&quot;
+remove(&quot;@input_filename&quot;)  # clean up temporary *.gp file
 </code>
 </gretl-function>
 <sample-script>
@@ -243,11 +254,14 @@ set verbose off
 include candlesticks.gfn
 
 # Prepare the dataset and variables
-open stock_data.gdt --frompkg=candlesticks
+open cocacola.gdt --frompkg=candlesticks
 list L = 3..7
 
 # Most basic call
-plot_candlesticks(L)
+plot_candlesticks(L, _(filename=&quot;candlestick.png&quot;))
+
+#plot_candlesticks(L)
+stop
 
 # Colored plot
 plot_candlesticks(L, _(show_colors=TRUE))
@@ -261,6 +275,9 @@ plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE,
 
 # Rotate xtics
 plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE, rotate_xtics=45))
+
+# Store chart locally
+plot_candlesticks(L, _(filename=&quot;candlestick.png&quot;))
 </sample-script>
 </gretl-function-package>
 </gretl-functions>
