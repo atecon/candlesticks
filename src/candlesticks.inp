@@ -150,7 +150,7 @@ function bundle default_values (void)
 end function
 
 function void plot_candlesticks (list L "Expected order: Open, Close, High, Low,
-                                 (show_volume)",
+                                 (Volume)",
                                  bundle self[null])
     /* Main function for generating candlesticks. */
 
@@ -160,8 +160,8 @@ function void plot_candlesticks (list L "Expected order: Open, Close, High, Low,
     bundle self = self + default_values()
 
     run_checks(L, self)
-
     series epoch = epochday($obsdate)
+
     if sum(!ok(L)) > 0
         print "WARNING: Some input series contain missing values. These are ignored."
         smpl L --no-missing
@@ -191,4 +191,15 @@ function void compile_gnuplot_chart (const bundle self)
     gnuplot --input="@input_filename" --output="@output_filename"
 
     remove("@input_filename")  # clean up temporary *.gp file
+end function
+
+
+function void candlestick_gui (list L "Order: Open, Close, High, Low, (Volume)",
+                               const bool show_colors "Plot colourized chart")
+    /* Helper function for GUI access. */
+
+    scalar show_volume = nelem(L) ==5 ? TRUE : FALSE
+    bundle self = _(show_volume, show_colors)
+
+    plot_candlesticks(L, self)
 end function

@@ -10,6 +10,17 @@ Source code and test script(s) can be found here:
 https://github.com/atecon/candlesticks
 
 
+Usage via the GUI
+=================
+As a user you can either call the main function via scripting (see below) or
+the GUI. The menu entry is "View->Graph specified vars->Candlesticks plot".
+The user has to pass a list with series in expected order: Open, Close, High,
+Low. Optionally, the last item can refer to Volume.
+
+If you pass the optional 5th volume series, this is shown in a separate chart below the candlestick plot.
+
+Via scripting the user can control many more details as shown below.
+
 
 PUBLIC FUNCTION:
 
