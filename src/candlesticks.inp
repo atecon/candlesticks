@@ -76,7 +76,6 @@ function string get_xtics_volume_string (const scalar T,
     return str
 end function
 
-
 function void compile_gnuplot_commands (const bundle self)
     # Compile the actual gnuplot code
 
@@ -102,7 +101,8 @@ function void compile_gnuplot_commands (const bundle self)
         printf("unset colorbox\n")
         printf("set title \"%s\"\n", self.title)
         if self.show_volume
-            printf("set multiplot\n")
+            printf("set multiplot layout 2,1\n")
+            printf("set lmargin at screen 0.08\n")
             printf("set size 1, 0.7\n")
             printf("set origin 0, 0.3\n")
             printf("set bmargin 0\n")
