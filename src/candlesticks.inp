@@ -144,13 +144,14 @@ function void compile_gnuplot_commands (const bundle self)
             printf("set lt 10 lw 1 lc rgb \"black\"\n")
             printf("set style fill solid border lt 10\n")
             if self.show_colors
-                printf("set palette defined (-1 'red', 1 'green')\n")
+                printf("set palette defined (-1 'red', 0 'gray', 1 'green')\n")
             else
-                printf("set palette defined (-1 'black', 1 'white')\n")
+                printf("set palette defined (-1 'black', 0 'gray', 1 'white')\n")
             endif
-            printf("plot '-' using 0:1:($3 < $2 ? -1 : 1) notitle with boxes palette\n")
-            loop i=1..self.T
-                printf("%d %g %g\n", self.Data[i,5], self.Data[i,1], self.Data[i,2])
+            printf("plot '-' using 0:1:($3 == 0 ? 0 : ($3 < $2 ? 1 : -1)) notitle with boxes palette\n")
+            printf("%d %g %g\n", self.Data[1,5], self.Data[1,2], 0)
+            loop i = 2 .. self.T
+                printf("%d %g %g\n", self.Data[i,5], self.Data[i,2], self.Data[i-1,2])
             endloop
             printf("e\n")
             printf("unset multiplot\n")
