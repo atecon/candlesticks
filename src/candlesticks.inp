@@ -2,9 +2,7 @@ function void run_checks (const list L,
                           bundle self)
     # Run initial checks
 
-    errorif($datatype != 2, "Dataset must be time-series")
-    errorif(($pd < 5 && $pd > 7),\
-            "Time-series dataset must have daily frequency")
+    errorif($datatype == 3, "Dataset must be cross-sectional or time-series")
     errorif(nelem(L) < 4, "Too few items in list")
     errorif(nelem(L) < 5 && self.show_volume == TRUE, "Volume series not in list")
     input_is_consistent(L)
@@ -50,13 +48,15 @@ function string get_filename (void)
 end function
 
 function string get_xtics_string (const series epoch,
-                                  const scalar offset)
+                                  const scalar offset,
+                                  const bool is_time_series)
     # Compile gnuplot string for xtics
 
     scalar T = nobs(epoch)
-    string str = "set xtics (" ~ sprintf("\"%s\" %d", isodate(epoch[1], TRUE), 0)
+
+    string str = "set xtics (" ~ sprintf("\"%s\" %d", is_time_series ? isodate(epoch[1], TRUE) : sprintf("%d",epoch[1]), 0)
     loop for (i = offset + 1; i <= T; i += offset)
-        str ~= sprintf(", \"%s\" %d", isodate(epoch[i], TRUE), i-1)
+        str ~= sprintf(", \"%s\" %d", is_time_series ? isodate(epoch[i], TRUE) : sprintf("%d",epoch[i]), i-1)
     endloop
     str ~= ")"
 
@@ -186,7 +186,7 @@ function void plot_candlesticks (list L "Expected order: Open, Close, Low, High,
     self.show_volume = nelem(L) == 5 ? TRUE : FALSE
 
     run_checks(L, self)
-    series epoch = epochday($obsdate)
+    scalar is_time_series = $datatype == 2 ? 1 : 0
 
     if sum(!ok(L)) > 0
         print "WARNING: Some input series contain missing values. These are ignored."
@@ -201,7 +201,9 @@ function void plot_candlesticks (list L "Expected order: Open, Close, Low, High,
     scalar graphH = max(self.Data[,4]) - min(self.Data[,3])
     scalar self.minY = floor(min(self.Data[,3]) - graphH * 0.1)
     scalar self.maxY = floor(max(self.Data[,4]) + graphH * 0.1) + 1
-    string self.xtics_string = get_xtics_string(epoch, self.offset_xtics)
+
+    series epoch = ( is_time_series ? epochday($obsdate) : time )
+    string self.xtics_string = get_xtics_string(epoch, self.offset_xtics, is_time_series)
     string self.xtics_string_volume = get_xtics_volume_string(self.T, self.offset_xtics)
 
     compile_gnuplot_commands(self)
