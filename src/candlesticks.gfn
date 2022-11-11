@@ -2,8 +2,8 @@
 <gretl-functions>
 <gretl-function-package name="candlesticks" needs-time-series-data="true" minver="2021d" lives-in-subdir="true">
 <author email="deferoci@gmail.com">Federico Fiorani and Artur Tarassow</author>
-<version>1.0</version>
-<date>2022-08-08</date>
+<version>1.1</version>
+<date>2022-11-11</date>
 <description>Plot candlestick chart</description>
 <tags>C10 C58</tags>
 <label>Candlestick plot</label>
@@ -65,6 +65,9 @@ Nothing.
 
 
 Changelog:
+- v1.1, August 2022
+    + Fix bug with volumne color
+    + Internal improvements
 - v1.0, August 2022
     + initial release
 </help>
@@ -127,18 +130,16 @@ errorif($datatype != 2, &quot;Dataset must be time-series&quot;)
 errorif(($pd &lt; 5 &amp;&amp; $pd &gt; 7), &quot;Time-series dataset must have daily frequency&quot;)
 errorif(nelem(L) &lt; 4, &quot;Too few items in list&quot;)
 errorif(nelem(L) &lt; 5 &amp;&amp; self.show_volume == TRUE, &quot;Volume series not in list&quot;)
-input_is_consistent(L)
+check_input_consistency(L)
 errorif(self.number_of_xtics != floor(self.number_of_xtics), &quot;number_of_xtics must be integer&quot;)
 errorif(self.number_of_xtics &lt; 1, &quot;number_of_xtics must be a positive integer&quot;)
 </code>
 </gretl-function>
-<gretl-function name="input_is_consistent" type="void" private="1">
+<gretl-function name="check_input_consistency" type="void" private="1">
  <params count="1">
   <param name="L" type="list" const="true"/>
  </params>
-<code>/* The expected ordering of the input series is: Open, Close, Low, High.
-Check for the following ordering: Low &lt;= (Open, Close) &lt;= High.
-return: void */
+<code>/* Check for the following ordering: Low &lt;= (Open, Close) &lt;= High. */
 scalar sum_open = sum(L[1])
 scalar sum_close = sum(L[2])
 scalar sum_low = sum(L[3])
@@ -167,7 +168,7 @@ return filename
 scalar T = nobs(epoch)
 string str = &quot;set xtics (&quot; ~ sprintf(&quot;\&quot;%s\&quot; %d&quot;, isodate(epoch[1], TRUE), 0)
 loop for (i = offset + 1; i &lt;= T; i += offset)
-  str ~= sprintf(&quot;, \&quot;%s\&quot; %d&quot;, isodate(epoch[i], TRUE), i-1)
+  str ~= sprintf(&quot;, \&quot;%s\&quot; %d&quot;, isodate(epoch[i], TRUE), (i-1))
 endloop
 str ~= &quot;)&quot;
 return str
@@ -213,7 +214,8 @@ outfile &quot;@filename&quot; --quiet
   printf(&quot;unset colorbox\n&quot;)
   printf(&quot;set title \&quot;%s\&quot;\n&quot;, self.title)
   if self.show_volume
-    printf(&quot;set multiplot\n&quot;)
+    printf(&quot;set multiplot layout 2,1\n&quot;)
+    printf(&quot;set lmargin at screen 0.08\n&quot;)
     printf(&quot;set size 1, 0.7\n&quot;)
     printf(&quot;set origin 0, 0.3\n&quot;)
     printf(&quot;set bmargin 0\n&quot;)
@@ -246,7 +248,7 @@ outfile &quot;@filename&quot; --quiet
     printf(&quot;set origin 0.0, 0.0\n&quot;)
     printf(&quot;set tmargin 0\n&quot;)
     printf(&quot;unset logscale y\n&quot;)
-    printf(&quot;set yrange [0:%d]\n&quot;, maxc(self.Data[,5])*1.2)
+    printf(&quot;set yrange [0:%g]\n&quot;, maxc(self.Data[,5])*1.2)
     printf(&quot;set format y \&quot;\%.0s \%c\&quot;\n&quot;)
     printf(&quot;set ytics 0, %d, %d\n&quot;, maxc(self.Data[,5])/5, maxc(self.Data[,5]))
     printf(&quot;set style line 1 lw 3\n&quot;)
@@ -255,13 +257,14 @@ outfile &quot;@filename&quot; --quiet
     printf(&quot;set lt 10 lw 1 lc rgb \&quot;black\&quot;\n&quot;)
     printf(&quot;set style fill solid border lt 10\n&quot;)
     if self.show_colors
-      printf(&quot;set palette defined (-1 'red', 1 'green')\n&quot;)
+      printf(&quot;set palette defined (-1 'red', 0 'gray', 1 'green')\n&quot;)
     else
-      printf(&quot;set palette defined (-1 'black', 1 'white')\n&quot;)
+      printf(&quot;set palette defined (-1 'black', 0 'gray', 1 'white')\n&quot;)
     endif
-    printf(&quot;plot '-' using 0:1:($3 &lt; $2 ? -1 : 1) notitle with boxes palette\n&quot;)
-    loop i=1..self.T
-      printf(&quot;%d %g %g\n&quot;, self.Data[i,5], self.Data[i,1], self.Data[i,2])
+    printf(&quot;plot '-' using 0:1:($3 == 0 ? 0 : ($3 &lt; $2 ? 1 : -1)) notitle with boxes palette\n&quot;)
+    printf(&quot;%d %g %g\n&quot;, self.Data[1,5], self.Data[1,2], 0)
+    loop i = 2 .. self.T
+      printf(&quot;%d %g %g\n&quot;, self.Data[i,5], self.Data[i,2], self.Data[i-1,2])
     endloop
     printf(&quot;e\n&quot;)
     printf(&quot;unset multiplot\n&quot;)

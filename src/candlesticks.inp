@@ -7,17 +7,15 @@ function void run_checks (const list L,
             "Time-series dataset must have daily frequency")
     errorif(nelem(L) < 4, "Too few items in list")
     errorif(nelem(L) < 5 && self.show_volume == TRUE, "Volume series not in list")
-    input_is_consistent(L)
+    check_input_consistency(L)
     errorif(self.number_of_xtics != floor(self.number_of_xtics),\
             "number_of_xtics must be integer")
     errorif(self.number_of_xtics < 1,\
             "number_of_xtics must be a positive integer")
 end function
 
-function void input_is_consistent (const list L)
-    /* The expected ordering of the input series is: Open, Close, Low, High.
-    Check for the following ordering: Low <= (Open, Close) <= High.
-    return: void */
+function void check_input_consistency (const list L)
+    /* Check for the following ordering: Low <= (Open, Close) <= High. */
 
     scalar sum_open = sum(L[1])
     scalar sum_close = sum(L[2])
@@ -54,9 +52,10 @@ function string get_xtics_string (const series epoch,
     # Compile gnuplot string for xtics
 
     scalar T = nobs(epoch)
-    string str = "set xtics (" ~ sprintf("\"%s\" %d", isodate(epoch[1], TRUE), 0)
+    string str = "set xtics (" \
+                 ~ sprintf("\"%s\" %d", isodate(epoch[1], TRUE), 0)
     loop for (i = offset + 1; i <= T; i += offset)
-        str ~= sprintf(", \"%s\" %d", isodate(epoch[i], TRUE), i-1)
+        str ~= sprintf(", \"%s\" %d", isodate(epoch[i], TRUE), (i-1))
     endloop
     str ~= ")"
 
