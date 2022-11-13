@@ -140,15 +140,46 @@ errorif(self.number_of_xtics &lt; 1, &quot;number_of_xtics must be a positive in
   <param name="L" type="list" const="true"/>
  </params>
 <code>/* Check for the following ordering: Low &lt;= (Open, Close) &lt;= High. */
-scalar sum_open = sum(L[1])
-scalar sum_close = sum(L[2])
-scalar sum_low = sum(L[3])
-scalar sum_high = sum(L[4])
-errorif(sum_low &gt; sum_high, &quot;Inconsistency: Series 'Low' is higher than 'high'.&quot;)
-errorif(sum_low &gt; sum_open, &quot;Inconsistency: Series 'Low' is higher than 'Open'.&quot;)
-errorif(sum_low &gt; sum_close, &quot;Inconsistency: Series 'Low' is higher than 'Close'.&quot;)
-errorif(sum_high &lt; sum_open, &quot;Inconsistency: Series 'High' is lower than 'Open'.&quot;)
-errorif(sum_high &lt; sum_close, &quot;Inconsistency: Series 'High' is lower than 'Close'.&quot;)
+series open_ = L[1]
+series close_ = L[2]
+series low_ = L[3]
+series high_ = L[4]
+low_exceeds_high(low_, high_)
+low_exceeds_close(low_, close_)
+open_exceeds_high(open_, high_)
+close_exceeds_high(close_, high_)
+</code>
+</gretl-function>
+<gretl-function name="close_exceeds_high" type="void" private="1">
+ <params count="2">
+  <param name="close_" type="series" const="true"/>
+  <param name="high_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(close_ &gt; high_), &quot;Inconsistency: Series 'Close' exceeds 'High'.&quot;)
+</code>
+</gretl-function>
+<gretl-function name="open_exceeds_high" type="void" private="1">
+ <params count="2">
+  <param name="open_" type="series" const="true"/>
+  <param name="high_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(open_ &gt; high_), &quot;Inconsistency: Series 'Open' exceeds 'High'.&quot;)
+</code>
+</gretl-function>
+<gretl-function name="low_exceeds_high" type="void" private="1">
+ <params count="2">
+  <param name="low_" type="series" const="true"/>
+  <param name="high_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(low_ &gt; high_), &quot;Inconsistency: Series 'Low' exceeds 'High'.&quot;)
+</code>
+</gretl-function>
+<gretl-function name="low_exceeds_close" type="void" private="1">
+ <params count="2">
+  <param name="low_" type="series" const="true"/>
+  <param name="close_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(low_ &gt; close_), &quot;Inconsistency: Series 'Low' exceeds 'Close'.&quot;)
 </code>
 </gretl-function>
 <gretl-function name="get_filename" type="string" private="1">
