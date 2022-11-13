@@ -25,6 +25,7 @@ function void check_input_consistency (const list L)
 
     low_exceeds_high(low_, high_)
     low_exceeds_close(low_, close_)
+    low_exceeds_open(low_, open_)
     open_exceeds_high(open_, high_)
     close_exceeds_high(close_, high_)
 end function
@@ -51,6 +52,12 @@ function void low_exceeds_close (const series low_,
                                 const series close_)
     errorif(sum(low_ > close_),
             "Inconsistency: Series 'Low' exceeds 'Close'.")
+end function
+
+function void low_exceeds_open (const series low_,
+                                const series open_)
+    errorif(sum(low_ > open_),
+            "Inconsistency: Series 'Low' exceeds 'Open'.")
 end function
 
 
