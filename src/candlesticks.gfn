@@ -2,8 +2,8 @@
 <gretl-functions>
 <gretl-function-package name="candlesticks" needs-time-series-data="true" minver="2021d" lives-in-subdir="true">
 <author email="deferoci@gmail.com">Federico Fiorani and Artur Tarassow</author>
-<version>1.0</version>
-<date>2022-08-08</date>
+<version>1.1</version>
+<date>2022-11-13</date>
 <description>Plot candlestick chart</description>
 <tags>C10 C58</tags>
 <label>Candlestick plot</label>
@@ -21,6 +21,17 @@ Source code and test script(s) can be found here:
 https://github.com/atecon/candlesticks
 
 
+Usage via the GUI
+=================
+As a user you can either call the main function via scripting (see below) or
+the GUI. The menu entry is &quot;View-&gt;Graph specified vars-&gt;Candlesticks plot&quot;.
+The user has to pass a list with series in expected order: Open, Close, High,
+Low. An optionally last item can refer to trade volume.
+
+If you pass the optional 5th volume series, this is shown in a separate chart below the candlestick plot.
+
+Via scripting the user can control many more details as shown below.
+
 
 PUBLIC FUNCTION:
 
@@ -31,15 +42,14 @@ Description:    Main function for creating chart
 
 Arguments:
 list L:
-        Series in list are in expected order Open, Close, High, Low, (Volume)
-        Volume series is optional, and plotted only if show_volume = TRUE
+        Mandatory list of series in expected order: Open, Close, Low, High.
+        A fifth series referring to trade volume is optional. Once added, it
+        will be plotted in a subplot.
 
 bundle self:
         Optional parameters for controlling the chart. You can pass the
         following parameters:
 
-          show_volume:  bool, Plot the volume chart below candlesticks
-                        (default: FALSE)
           show_colors:  bool, Plot colored chart (default: FALSE)
           filename      string, Filename to store chart (default: empty,
           rotate_xtics: scalar, Rotate x-labels by rotate_xtics degrees
@@ -55,6 +65,10 @@ Nothing.
 
 
 Changelog:
+- v1.1, August 2022
+    + Fix bug with volumne color
+    + Check consistency of input data
+    + Internal improvements
 - v1.0, August 2022
     + initial release
 </help>
@@ -63,7 +77,7 @@ cocacola.gdt </data-files>
 <gretl-function name="plot_candlesticks" type="void">
  <params count="2">
   <param name="L" type="list">
-<description>Expected order: Open, Close, High, Low,                                 (Volume)</description>
+<description>Expected order: Open, Close, Low, High,                                 (Volume)</description>
   </param>
   <param name="self" type="bundle" optional="true"/>
  </params>
@@ -72,6 +86,7 @@ if !exists(self)
   bundle self
 endif
 bundle self = self + default_values()
+self.show_volume = nelem(L) == 5 ? TRUE : FALSE
 run_checks(L, self)
 series epoch = epochday($obsdate)
 if sum(!ok(L)) &gt; 0
@@ -94,7 +109,7 @@ compile_gnuplot_chart(self)
 <gretl-function name="candlestick_gui" type="void" no-print="1" pkg-role="gui-main">
  <params count="2">
   <param name="L" type="list">
-<description>Order: Open, Close, High, Low, (Volume)</description>
+<description>Order: Open, Close, Low, High, (Volume)</description>
   </param>
   <param name="show_colors" type="bool" const="true">
 <description>Plot colourized chart</description>
@@ -116,8 +131,65 @@ errorif($datatype != 2, &quot;Dataset must be time-series&quot;)
 errorif(($pd &lt; 5 &amp;&amp; $pd &gt; 7), &quot;Time-series dataset must have daily frequency&quot;)
 errorif(nelem(L) &lt; 4, &quot;Too few items in list&quot;)
 errorif(nelem(L) &lt; 5 &amp;&amp; self.show_volume == TRUE, &quot;Volume series not in list&quot;)
+check_input_consistency(L)
 errorif(self.number_of_xtics != floor(self.number_of_xtics), &quot;number_of_xtics must be integer&quot;)
 errorif(self.number_of_xtics &lt; 1, &quot;number_of_xtics must be a positive integer&quot;)
+</code>
+</gretl-function>
+<gretl-function name="check_input_consistency" type="void" private="1">
+ <params count="1">
+  <param name="L" type="list" const="true"/>
+ </params>
+<code>/* Check for the following ordering: Low &lt;= (Open, Close) &lt;= High. */
+series open_ = L[1]
+series close_ = L[2]
+series low_ = L[3]
+series high_ = L[4]
+low_exceeds_high(low_, high_)
+low_exceeds_close(low_, close_)
+low_exceeds_open(low_, open_)
+open_exceeds_high(open_, high_)
+close_exceeds_high(close_, high_)
+</code>
+</gretl-function>
+<gretl-function name="close_exceeds_high" type="void" private="1">
+ <params count="2">
+  <param name="close_" type="series" const="true"/>
+  <param name="high_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(close_ &gt; high_), &quot;Inconsistency: Series 'Close' exceeds 'High'.&quot;)
+</code>
+</gretl-function>
+<gretl-function name="open_exceeds_high" type="void" private="1">
+ <params count="2">
+  <param name="open_" type="series" const="true"/>
+  <param name="high_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(open_ &gt; high_), &quot;Inconsistency: Series 'Open' exceeds 'High'.&quot;)
+</code>
+</gretl-function>
+<gretl-function name="low_exceeds_high" type="void" private="1">
+ <params count="2">
+  <param name="low_" type="series" const="true"/>
+  <param name="high_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(low_ &gt; high_), &quot;Inconsistency: Series 'Low' exceeds 'High'.&quot;)
+</code>
+</gretl-function>
+<gretl-function name="low_exceeds_close" type="void" private="1">
+ <params count="2">
+  <param name="low_" type="series" const="true"/>
+  <param name="close_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(low_ &gt; close_), &quot;Inconsistency: Series 'Low' exceeds 'Close'.&quot;)
+</code>
+</gretl-function>
+<gretl-function name="low_exceeds_open" type="void" private="1">
+ <params count="2">
+  <param name="low_" type="series" const="true"/>
+  <param name="open_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(low_ &gt; open_), &quot;Inconsistency: Series 'Low' exceeds 'Open'.&quot;)
 </code>
 </gretl-function>
 <gretl-function name="get_filename" type="string" private="1">
@@ -137,7 +209,7 @@ return filename
 scalar T = nobs(epoch)
 string str = &quot;set xtics (&quot; ~ sprintf(&quot;\&quot;%s\&quot; %d&quot;, isodate(epoch[1], TRUE), 0)
 loop for (i = offset + 1; i &lt;= T; i += offset)
-  str ~= sprintf(&quot;, \&quot;%s\&quot; %d&quot;, isodate(epoch[i], TRUE), i-1)
+  str ~= sprintf(&quot;, \&quot;%s\&quot; %d&quot;, isodate(epoch[i], TRUE), (i-1))
 endloop
 str ~= &quot;)&quot;
 return str
@@ -183,7 +255,8 @@ outfile &quot;@filename&quot; --quiet
   printf(&quot;unset colorbox\n&quot;)
   printf(&quot;set title \&quot;%s\&quot;\n&quot;, self.title)
   if self.show_volume
-    printf(&quot;set multiplot\n&quot;)
+    printf(&quot;set multiplot layout 2,1\n&quot;)
+    printf(&quot;set lmargin at screen 0.08\n&quot;)
     printf(&quot;set size 1, 0.7\n&quot;)
     printf(&quot;set origin 0, 0.3\n&quot;)
     printf(&quot;set bmargin 0\n&quot;)
@@ -216,7 +289,7 @@ outfile &quot;@filename&quot; --quiet
     printf(&quot;set origin 0.0, 0.0\n&quot;)
     printf(&quot;set tmargin 0\n&quot;)
     printf(&quot;unset logscale y\n&quot;)
-    printf(&quot;set yrange [0:%d]\n&quot;, maxc(self.Data[,5])*1.2)
+    printf(&quot;set yrange [0:%g]\n&quot;, maxc(self.Data[,5])*1.2)
     printf(&quot;set format y \&quot;\%.0s \%c\&quot;\n&quot;)
     printf(&quot;set ytics 0, %d, %d\n&quot;, maxc(self.Data[,5])/5, maxc(self.Data[,5]))
     printf(&quot;set style line 1 lw 3\n&quot;)
@@ -225,13 +298,14 @@ outfile &quot;@filename&quot; --quiet
     printf(&quot;set lt 10 lw 1 lc rgb \&quot;black\&quot;\n&quot;)
     printf(&quot;set style fill solid border lt 10\n&quot;)
     if self.show_colors
-      printf(&quot;set palette defined (-1 'red', 1 'green')\n&quot;)
+      printf(&quot;set palette defined (-1 'red', 0 'gray', 1 'green')\n&quot;)
     else
-      printf(&quot;set palette defined (-1 'black', 1 'white')\n&quot;)
+      printf(&quot;set palette defined (-1 'black', 0 'gray', 1 'white')\n&quot;)
     endif
-    printf(&quot;plot '-' using 0:1:($3 &lt; $2 ? -1 : 1) notitle with boxes palette\n&quot;)
-    loop i=1..self.T
-      printf(&quot;%d %g %g\n&quot;, self.Data[i,5], self.Data[i,1], self.Data[i,2])
+    printf(&quot;plot '-' using 0:1:($3 == 0 ? 0 : ($3 &lt; $2 ? 1 : -1)) notitle with boxes palette\n&quot;)
+    printf(&quot;%d %g %g\n&quot;, self.Data[1,5], self.Data[1,2], 0)
+    loop i = 2 .. self.T
+      printf(&quot;%d %g %g\n&quot;, self.Data[i,5], self.Data[i,2], self.Data[i-1,2])
     endloop
     printf(&quot;e\n&quot;)
     printf(&quot;unset multiplot\n&quot;)
@@ -272,7 +346,7 @@ include candlesticks.gfn
 
 # Prepare the dataset and variables
 open cocacola.gdt --frompkg=candlesticks
-list L = 3..7
+list L = KO_o KO_c KO_l KO_h
 
 # Most basic call
 plot_candlesticks(L)
@@ -280,15 +354,17 @@ plot_candlesticks(L)
 # Colored plot
 plot_candlesticks(L, _(show_colors=TRUE))
 
-# Add a subplot showing the trade volume
-plot_candlesticks(L, _(show_volume=TRUE))
+# Also show trade volume in a subplot
+list L += KO_v   # add 5th item which should refer to trade volume
+plot_candlesticks(L)
 
 # Add a title
-plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE,
-                  title=&quot;Coca Cola (KO)&quot;))
+plot_candlesticks(L,  _(show_colors=TRUE,
+                        title=&quot;Coca Cola (KO)&quot;))
 
 # Rotate xtics
-plot_candlesticks(L,  _(show_volume=TRUE, show_colors=TRUE, rotate_xtics=45))
+plot_candlesticks(L,  _(show_colors=TRUE,
+                        rotate_xtics=45))
 
 # Store chart locally
 plot_candlesticks(L, _(filename=&quot;candlestick.png&quot;))

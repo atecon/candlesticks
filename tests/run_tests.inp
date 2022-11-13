@@ -1,0 +1,81 @@
+set verbose off
+clear
+
+set assert stop
+include assertion.gfn
+include "./src/candlesticks.inp" --force
+
+nulldata 3
+setobs 1 1 --time-series
+
+function list get_valid_data (void)
+    /* Create dataset. */
+
+    series open_ = {1, 1, 1}
+    series close_ = {2, 2, 2}
+    series low_ = {1, 1, 1}
+    series high_ = {3, 3, 3}
+
+
+    return deflist(open_, close_, low_, high_)
+end function
+
+function void test_check_input_consistency (void)
+    print "Start testing function check_input_consistency()"
+
+    # Given
+    list Input = get_valid_data()
+
+    # When
+    catch check_input_consistency(Input)
+
+    # Then
+    assert($error == FALSE)
+end function
+test_check_input_consistency()
+
+
+function void test_close_exceeds_high (void)
+    /* We do not test the remaining combinations as they have their
+    functions share the same structure. */
+    print "Start testing function close_exceeds_high()"
+
+    # Given
+    series close_valid = {1, 1, 1}
+    series high_valid = {1, 2, 1}
+    series close_valid_nan = {1, NA, 1}
+    series high_valid_nan = {1, 2, NA}
+    series close_fail = {2, 1, 1}
+    series high_fail = {1, 1, 1}
+    series close_fail_nan = {2, NA, 1}
+    series high_fail_nan = {1, 1, NA}
+    err_valid_expected = FALSE
+    err_valid_nan_expected = FALSE
+    err_fail_expected = 47
+    err_fail_nan_expected = 47
+
+    # When
+    catch close_exceeds_high(close_valid, high_valid)
+    err_valid_actual = $error
+
+    catch close_exceeds_high(close_valid_nan, high_valid_nan)
+    err_valid_nan_actual = $error
+
+    catch close_exceeds_high(close_fail, high_fail)
+    err_fail_actual = $error
+
+    catch close_exceeds_high(close_fail_nan, high_fail_nan)
+    err_fail_nan_actual = $error
+
+    # Then
+    assert(err_valid_actual == err_valid_expected)
+    assert(err_valid_nan_actual == err_valid_nan_expected)
+    assert(err_fail_actual == err_fail_expected)
+    assert(err_fail_nan_actual == err_fail_nan_expected)
+end function
+test_close_exceeds_high()
+
+
+
+print "Finished all tests successfully."
+quit

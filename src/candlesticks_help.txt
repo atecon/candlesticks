@@ -15,7 +15,7 @@ Usage via the GUI
 As a user you can either call the main function via scripting (see below) or
 the GUI. The menu entry is "View->Graph specified vars->Candlesticks plot".
 The user has to pass a list with series in expected order: Open, Close, High,
-Low. Optionally, the last item can refer to Volume.
+Low. An optionally last item can refer to trade volume.
 
 If you pass the optional 5th volume series, this is shown in a separate chart below the candlestick plot.
 
@@ -31,15 +31,14 @@ Description:    Main function for creating chart
 
 Arguments:
 list L:
-        Series in list are in expected order Open, Close, High, Low, (Volume)
-        Volume series is optional, and plotted only if show_volume = TRUE
+        Mandatory list of series in expected order: Open, Close, Low, High.
+        A fifth series referring to trade volume is optional. Once added, it
+        will be plotted in a subplot.
 
 bundle self:
         Optional parameters for controlling the chart. You can pass the
         following parameters:
 
-          show_volume:  bool, Plot the volume chart below candlesticks
-                        (default: FALSE)
           show_colors:  bool, Plot colored chart (default: FALSE)
           filename      string, Filename to store chart (default: empty,
           rotate_xtics: scalar, Rotate x-labels by rotate_xtics degrees
@@ -55,5 +54,9 @@ Nothing.
 
 
 Changelog:
+- v1.1, August 2022
+    + Fix bug with volumne color
+    + Check consistency of input data
+    + Internal improvements
 - v1.0, August 2022
     + initial release
