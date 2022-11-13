@@ -3,7 +3,7 @@
 <gretl-function-package name="candlesticks" needs-time-series-data="true" minver="2021d" lives-in-subdir="true">
 <author email="deferoci@gmail.com">Federico Fiorani and Artur Tarassow</author>
 <version>1.1</version>
-<date>2022-11-11</date>
+<date>2022-11-13</date>
 <description>Plot candlestick chart</description>
 <tags>C10 C58</tags>
 <label>Candlestick plot</label>
@@ -67,6 +67,7 @@ Nothing.
 Changelog:
 - v1.1, August 2022
     + Fix bug with volumne color
+    + Check consistency of input data
     + Internal improvements
 - v1.0, August 2022
     + initial release
@@ -146,6 +147,7 @@ series low_ = L[3]
 series high_ = L[4]
 low_exceeds_high(low_, high_)
 low_exceeds_close(low_, close_)
+low_exceeds_open(low_, open_)
 open_exceeds_high(open_, high_)
 close_exceeds_high(close_, high_)
 </code>
@@ -180,6 +182,14 @@ close_exceeds_high(close_, high_)
   <param name="close_" type="series" const="true"/>
  </params>
 <code>errorif(sum(low_ &gt; close_), &quot;Inconsistency: Series 'Low' exceeds 'Close'.&quot;)
+</code>
+</gretl-function>
+<gretl-function name="low_exceeds_open" type="void" private="1">
+ <params count="2">
+  <param name="low_" type="series" const="true"/>
+  <param name="open_" type="series" const="true"/>
+ </params>
+<code>errorif(sum(low_ &gt; open_), &quot;Inconsistency: Series 'Low' exceeds 'Open'.&quot;)
 </code>
 </gretl-function>
 <gretl-function name="get_filename" type="string" private="1">

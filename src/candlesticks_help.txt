@@ -56,6 +56,7 @@ Nothing.
 Changelog:
 - v1.1, August 2022
     + Fix bug with volumne color
+    + Check consistency of input data
     + Internal improvements
 - v1.0, August 2022
     + initial release
