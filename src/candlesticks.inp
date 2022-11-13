@@ -6,7 +6,8 @@ function void run_checks (const list L,
     errorif(($pd < 5 && $pd > 7),\
             "Time-series dataset must have daily frequency")
     errorif(nelem(L) < 4, "Too few items in list")
-    errorif(nelem(L) < 5 && self.show_volume == TRUE, "Volume series not in list")
+    errorif(nelem(L) < 5 && self.show_volume == TRUE,
+            "Volume series not in list")
     check_input_consistency(L)
     errorif(self.number_of_xtics != floor(self.number_of_xtics),\
             "number_of_xtics must be integer")
@@ -17,21 +18,39 @@ end function
 function void check_input_consistency (const list L)
     /* Check for the following ordering: Low <= (Open, Close) <= High. */
 
-    scalar sum_open = sum(L[1])
-    scalar sum_close = sum(L[2])
-    scalar sum_low = sum(L[3])
-    scalar sum_high = sum(L[4])
+    series open_ = L[1]
+    series close_ = L[2]
+    series low_ = L[3]
+    series high_ = L[4]
 
-    errorif(sum_low > sum_high,
-            "Inconsistency: Series 'Low' is higher than 'high'.")
-    errorif(sum_low > sum_open,
-            "Inconsistency: Series 'Low' is higher than 'Open'.")
-    errorif(sum_low > sum_close,
-            "Inconsistency: Series 'Low' is higher than 'Close'.")
-    errorif(sum_high < sum_open,
-            "Inconsistency: Series 'High' is lower than 'Open'.")
-    errorif(sum_high < sum_close,
-            "Inconsistency: Series 'High' is lower than 'Close'.")
+    low_exceeds_high(low_, high_)
+    low_exceeds_close(low_, close_)
+    open_exceeds_high(open_, high_)
+    close_exceeds_high(close_, high_)
+end function
+
+function void close_exceeds_high (const series close_,
+                                  const series high_)
+    errorif(sum(close_ > high_),
+            "Inconsistency: Series 'Close' exceeds 'High'.")
+end function
+
+function void open_exceeds_high (const series open_,
+                                 const series high_)
+    errorif(sum(open_ > high_),
+            "Inconsistency: Series 'Open' exceeds 'High'.")
+end function
+
+function void low_exceeds_high (const series low_,
+                                const series high_)
+    errorif(sum(low_ > high_),
+            "Inconsistency: Series 'Low' exceeds 'High'.")
+end function
+
+function void low_exceeds_close (const series low_,
+                                const series close_)
+    errorif(sum(low_ > close_),
+            "Inconsistency: Series 'Low' exceeds 'Close'.")
 end function
 
 
