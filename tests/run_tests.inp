@@ -16,7 +16,6 @@ function list get_valid_data (void)
     series low_ = {1, 1, 1}
     series high_ = {3, 3, 3}
 
-
     return deflist(open_, close_, low_, high_)
 end function
 
