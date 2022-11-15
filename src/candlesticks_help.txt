@@ -46,11 +46,13 @@ be plotted in a subplot.
 bundle self: Optional parameters for controlling the chart. You can pass the
 following parameters:
 
-          show_colors:  bool, Plot colored chart (default: FALSE) filename
-          string, Filename to store chart (default: empty, rotate_xtics:
-          scalar, Rotate x-labels by rotate_xtics degrees(default: 0) title:
-          string, Set title of chart (default: "") number_of_xtics: int, Show
-          only every number_of_xtics xtic label(default: 7)
+    show_colors:        bool, Plot colored chart (default: FALSE)
+    filename:           string, Filename to store chart (default: empty)
+    rotate_xtics:       scalar, Rotate x-labels by rotate_xtics degrees
+                        (default: 0)
+    title:              string, Set title of chart (default: "")
+    number_of_xtics:    int, Show only every number_of_xtics xtic label
+                        (default: 7)
 
 Return: Nothing.
 -----------------------------------------------------------------------
