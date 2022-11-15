@@ -56,9 +56,8 @@ Return: Nothing.
 
 
 Changelog:
-- v1.1, August 2022
+- v1.1, November 2022
     + Fix bug with volume color
-    + Check consistency of input data
     + Internal improvements
 - v1.0, August 2022
     + initial release
