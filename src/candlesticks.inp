@@ -106,6 +106,8 @@ function void compile_gnuplot_commands (const bundle self)
 
     string filename = self.input_filename
 
+    set force_decpoint on
+
     outfile "@filename" --quiet
         printf("set yrange [%g:%g]\n", self.minY, self.maxY)
         printf("set xrange [-1:%d]\n", (self.T + 5))
@@ -182,6 +184,8 @@ function void compile_gnuplot_commands (const bundle self)
             printf("unset multiplot\n")
         endif
     end outfile
+
+    set force_decpoint off
 end function
 
 function bundle default_values (void)
