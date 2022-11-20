@@ -3,7 +3,7 @@
 <gretl-function-package name="candlesticks" needs-time-series-data="true" minver="2021d" lives-in-subdir="true">
 <author email="deferoci@gmail.com">Federico Fiorani and Artur Tarassow</author>
 <version>1.1</version>
-<date>2022-11-13</date>
+<date>2022-11-15</date>
 <description>Plot candlestick chart</description>
 <tags>C10 C58</tags>
 <label>Candlestick plot</label>
@@ -12,23 +12,33 @@
 This package creates so called candlestick plots. See here for examples:
 http://gnuplot.sourceforge.net/demo_5.4/finance.html
 
-Candlesticks are used to plot financial data. The height of the candlestick is the difference between the opening and closing price, and is called &quot;body&quot;. Above and below the body are the &quot;shadows&quot; that indicate the maximum and minimum price at observation t. If the opening price is lower than the closing price, the body is white or green. If the opening price is higher than the closing price, the body is black or red. For more: https://en.wikipedia.org/wiki/Candlestick_chart
+Candlesticks are used to plot financial data. The height of the candlestick is
+the difference between the opening and closing price, and is called &quot;body&quot;.
+Above and below the body are the &quot;shadows&quot; that indicate the maximum and
+minimum price at observation t. If the opening price is lower than the closing
+price, the body is white (in a monochrome plot) or green (in a color plot). If
+the opening price is higher than the closing price, the body is black or red.
+For more: https://en.wikipedia.org/wiki/Candlestick_chart
 
-The data frequency must be a time-series with daily observations (5, 6 or 7 days week). If one of the passed series includes missing values for the t-th observation, this observation is ignored for plotting.
+The data frequency must be a time-series with daily observations (5, 6 or 7 days
+week). If one of the passed series includes missing values for the t-th
+observation, this observation is ignored for plotting.
 
-Please ask questions and report bugs on the gretl mailing list if possible. Alternatively, create an issue ticket on the github repo (see below).
-Source code and test script(s) can be found here:
+Please ask questions and report bugs on the gretl mailing list if possible.
+Alternatively, create an issue ticket on the github repo (see below). Source
+code and test script(s) can be found here:
 https://github.com/atecon/candlesticks
 
 
 Usage via the GUI
 =================
 As a user you can either call the main function via scripting (see below) or
-the GUI. The menu entry is &quot;View-&gt;Graph specified vars-&gt;Candlesticks plot&quot;.
-The user has to pass a list with series in expected order: Open, Close, High,
-Low. An optionally last item can refer to trade volume.
+the GUI. The menu entry is &quot;View-&gt;Graph specified vars-&gt;Candlesticks plot&quot;. The
+user has to pass a list with series in expected order: Open, Close, High, Low.
+An optionally last item can refer to trade volume.
 
-If you pass the optional 5th volume series, this is shown in a separate chart below the candlestick plot.
+If you pass the optional 5th volume series, this is shown in a separate chart
+below the candlestick plot.
 
 Via scripting the user can control many more details as shown below.
 
@@ -40,34 +50,28 @@ Function:       plot_candlesticks(list L, bundle self)
 
 Description:    Main function for creating chart
 
-Arguments:
-list L:
-        Mandatory list of series in expected order: Open, Close, Low, High.
-        A fifth series referring to trade volume is optional. Once added, it
-        will be plotted in a subplot.
+Arguments: list L: Mandatory list of series in expected order: Open, Close, Low,
+High. A fifth series referring to trade volume is optional. Once added, it will
+be plotted in a subplot.
 
-bundle self:
-        Optional parameters for controlling the chart. You can pass the
-        following parameters:
+bundle self: Optional parameters for controlling the chart. You can pass the
+following parameters:
 
-          show_colors:  bool, Plot colored chart (default: FALSE)
-          filename      string, Filename to store chart (default: empty,
-          rotate_xtics: scalar, Rotate x-labels by rotate_xtics degrees
+    show_colors:        bool, Plot colored chart (default: FALSE)
+    filename:           string, Filename to store chart (default: empty)
+    rotate_xtics:       scalar, Rotate x-labels by rotate_xtics degrees
                         (default: 0)
-          title:        string, Set title of chart (default: &quot;&quot;)
-          number_of_xtics:
-                        int, Show only every number_of_xtics xtic label
+    title:              string, Set title of chart (default: &quot;&quot;)
+    number_of_xtics:    int, Show only every number_of_xtics xtic label
                         (default: 7)
 
-Return:
-Nothing.
+Return: Nothing.
 -----------------------------------------------------------------------
 
 
 Changelog:
-- v1.1, August 2022
-    + Fix bug with volumne color
-    + Check consistency of input data
+- v1.1, November 2022
+    + Fix bug with volume color
     + Internal improvements
 - v1.0, August 2022
     + initial release
@@ -140,56 +144,23 @@ errorif(self.number_of_xtics &lt; 1, &quot;number_of_xtics must be a positive in
  <params count="1">
   <param name="L" type="list" const="true"/>
  </params>
-<code>/* Check for the following ordering: Low &lt;= (Open, Close) &lt;= High. */
-series open_ = L[1]
-series close_ = L[2]
-series low_ = L[3]
-series high_ = L[4]
-low_exceeds_high(low_, high_)
-low_exceeds_close(low_, close_)
-low_exceeds_open(low_, open_)
-open_exceeds_high(open_, high_)
-close_exceeds_high(close_, high_)
+<code>/* Check for the following ordering: Low &lt;= (Open, Close) &lt;= High.
+The expecting ordering of L is:
+L[1]: open, L[2]: close, L[3]: low, L[4]: high
+*/
+first_exceeds_second(L[3], L[1])
+first_exceeds_second(L[3], L[2])
+first_exceeds_second(L[3], L[4])
+first_exceeds_second(L[1], L[4])
+first_exceeds_second(L[2], L[4])
 </code>
 </gretl-function>
-<gretl-function name="close_exceeds_high" type="void" private="1">
+<gretl-function name="first_exceeds_second" type="void" private="1">
  <params count="2">
-  <param name="close_" type="series" const="true"/>
-  <param name="high_" type="series" const="true"/>
+  <param name="first" type="series" const="true"/>
+  <param name="second" type="series" const="true"/>
  </params>
-<code>errorif(sum(close_ &gt; high_), &quot;Inconsistency: Series 'Close' exceeds 'High'.&quot;)
-</code>
-</gretl-function>
-<gretl-function name="open_exceeds_high" type="void" private="1">
- <params count="2">
-  <param name="open_" type="series" const="true"/>
-  <param name="high_" type="series" const="true"/>
- </params>
-<code>errorif(sum(open_ &gt; high_), &quot;Inconsistency: Series 'Open' exceeds 'High'.&quot;)
-</code>
-</gretl-function>
-<gretl-function name="low_exceeds_high" type="void" private="1">
- <params count="2">
-  <param name="low_" type="series" const="true"/>
-  <param name="high_" type="series" const="true"/>
- </params>
-<code>errorif(sum(low_ &gt; high_), &quot;Inconsistency: Series 'Low' exceeds 'High'.&quot;)
-</code>
-</gretl-function>
-<gretl-function name="low_exceeds_close" type="void" private="1">
- <params count="2">
-  <param name="low_" type="series" const="true"/>
-  <param name="close_" type="series" const="true"/>
- </params>
-<code>errorif(sum(low_ &gt; close_), &quot;Inconsistency: Series 'Low' exceeds 'Close'.&quot;)
-</code>
-</gretl-function>
-<gretl-function name="low_exceeds_open" type="void" private="1">
- <params count="2">
-  <param name="low_" type="series" const="true"/>
-  <param name="open_" type="series" const="true"/>
- </params>
-<code>errorif(sum(low_ &gt; open_), &quot;Inconsistency: Series 'Low' exceeds 'Open'.&quot;)
+<code>errorif(sum(first &gt; second), sprintf(&quot;Inconsistency: Series '%s' exceeds '%s'.&quot;, argname(first), argname(second)))
 </code>
 </gretl-function>
 <gretl-function name="get_filename" type="string" private="1">
@@ -235,6 +206,7 @@ return str
  </params>
 <code># Compile the actual gnuplot code
 string filename = self.input_filename
+set force_decpoint on
 outfile &quot;@filename&quot; --quiet
   printf(&quot;set yrange [%g:%g]\n&quot;, self.minY, self.maxY)
   printf(&quot;set xrange [-1:%d]\n&quot;, (self.T + 5))
@@ -311,6 +283,7 @@ outfile &quot;@filename&quot; --quiet
     printf(&quot;unset multiplot\n&quot;)
   endif
 end outfile
+set force_decpoint off
 </code>
 </gretl-function>
 <gretl-function name="default_values" type="bundle" private="1">

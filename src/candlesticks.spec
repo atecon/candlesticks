@@ -1,7 +1,7 @@
 author = Federico Fiorani and Artur Tarassow
 email = deferoci@gmail.com
 version = 1.1
-date = 2022-11-13
+date = 2022-11-15
 description = Plot candlestick chart
 tags = C10 C58
 min-version = 2021d

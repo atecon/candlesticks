@@ -16,7 +16,6 @@ function list get_valid_data (void)
     series low_ = {1, 1, 1}
     series high_ = {3, 3, 3}
 
-
     return deflist(open_, close_, low_, high_)
 end function
 
@@ -35,10 +34,10 @@ end function
 test_check_input_consistency()
 
 
-function void test_close_exceeds_high (void)
+function void test_first_exceeds_second (void)
     /* We do not test the remaining combinations as they have their
     functions share the same structure. */
-    print "Start testing function close_exceeds_high()"
+    print "Start testing function first_exceeds_second()"
 
     # Given
     series close_valid = {1, 1, 1}
@@ -55,16 +54,16 @@ function void test_close_exceeds_high (void)
     err_fail_nan_expected = 47
 
     # When
-    catch close_exceeds_high(close_valid, high_valid)
+    catch first_exceeds_second(close_valid, high_valid)
     err_valid_actual = $error
 
-    catch close_exceeds_high(close_valid_nan, high_valid_nan)
+    catch first_exceeds_second(close_valid_nan, high_valid_nan)
     err_valid_nan_actual = $error
 
-    catch close_exceeds_high(close_fail, high_fail)
+    catch first_exceeds_second(close_fail, high_fail)
     err_fail_actual = $error
 
-    catch close_exceeds_high(close_fail_nan, high_fail_nan)
+    catch first_exceeds_second(close_fail_nan, high_fail_nan)
     err_fail_nan_actual = $error
 
     # Then
@@ -73,7 +72,7 @@ function void test_close_exceeds_high (void)
     assert(err_fail_actual == err_fail_expected)
     assert(err_fail_nan_actual == err_fail_nan_expected)
 end function
-test_close_exceeds_high()
+test_first_exceeds_second()
 
 
 

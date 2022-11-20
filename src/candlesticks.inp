@@ -16,48 +16,23 @@ function void run_checks (const list L,
 end function
 
 function void check_input_consistency (const list L)
-    /* Check for the following ordering: Low <= (Open, Close) <= High. */
+    /* Check for the following ordering: Low <= (Open, Close) <= High.
+    The expecting ordering of L is:
+    L[1]: open, L[2]: close, L[3]: low, L[4]: high
+    */
 
-    series open_ = L[1]
-    series close_ = L[2]
-    series low_ = L[3]
-    series high_ = L[4]
-
-    low_exceeds_high(low_, high_)
-    low_exceeds_close(low_, close_)
-    low_exceeds_open(low_, open_)
-    open_exceeds_high(open_, high_)
-    close_exceeds_high(close_, high_)
+    first_exceeds_second(L[3], L[1])
+    first_exceeds_second(L[3], L[2])
+    first_exceeds_second(L[3], L[4])
+    first_exceeds_second(L[1], L[4])
+    first_exceeds_second(L[2], L[4])
 end function
 
-function void close_exceeds_high (const series close_,
-                                  const series high_)
-    errorif(sum(close_ > high_),
-            "Inconsistency: Series 'Close' exceeds 'High'.")
-end function
-
-function void open_exceeds_high (const series open_,
-                                 const series high_)
-    errorif(sum(open_ > high_),
-            "Inconsistency: Series 'Open' exceeds 'High'.")
-end function
-
-function void low_exceeds_high (const series low_,
-                                const series high_)
-    errorif(sum(low_ > high_),
-            "Inconsistency: Series 'Low' exceeds 'High'.")
-end function
-
-function void low_exceeds_close (const series low_,
-                                const series close_)
-    errorif(sum(low_ > close_),
-            "Inconsistency: Series 'Low' exceeds 'Close'.")
-end function
-
-function void low_exceeds_open (const series low_,
-                                const series open_)
-    errorif(sum(low_ > open_),
-            "Inconsistency: Series 'Low' exceeds 'Open'.")
+function void first_exceeds_second (const series first,
+                                    const series second)
+    errorif(sum(first > second),
+            sprintf("Inconsistency: Series '%s' exceeds '%s'.",
+                    argname(first), argname(second)))
 end function
 
 
@@ -105,6 +80,8 @@ function void compile_gnuplot_commands (const bundle self)
     # Compile the actual gnuplot code
 
     string filename = self.input_filename
+
+    set force_decpoint on
 
     outfile "@filename" --quiet
         printf("set yrange [%g:%g]\n", self.minY, self.maxY)
@@ -182,6 +159,8 @@ function void compile_gnuplot_commands (const bundle self)
             printf("unset multiplot\n")
         endif
     end outfile
+
+    set force_decpoint off
 end function
 
 function bundle default_values (void)
